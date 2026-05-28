@@ -1,0 +1,203 @@
+{% extends 'base/base.html' %}
+{% block title %}Dashboard Administrateur{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Tableau de bord administrateur</h2>
+
+{# KPIs globaux #}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-2">
+        <div class="card text-center border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold text-primary">{{ total_tickets }}</div>
+                <div class="text-muted small">Total</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="card text-center border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold text-warning">{{ open_tickets }}</div>
+                <div class="text-muted small">Ouverts</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="card text-center border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold text-danger">{{ critical_tickets }}</div>
+                <div class="text-muted small">Critiques</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="card text-center border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold text-secondary">{{ unassigned_tickets }}</div>
+                <div class="text-muted small">Non affectés</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="card text-center border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold text-info">{{ total_users }}</div>
+                <div class="text-muted small">Utilisateurs</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="card text-center border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="fs-2 fw-bold text-success">{{ total_techniciens }}</div>
+                <div class="text-muted small">Techniciens</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Alertes critiques #}
+{% if critical_open %}
+<div class="alert alert-danger mb-4">
+    <strong>🚨 {{ critical_open|length }} ticket(s) critique(s) nécessitent une attention immédiate</strong>
+    <div class="mt-2">
+        {% for ticket in critical_open %}
+        <a href="{% url 'tickets:detail' ticket.pk %}"
+           class="badge bg-danger text-decoration-none me-1">
+            #{{ ticket.pk }} — {{ ticket.title|truncatechars:30 }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+
+    {# Charge des techniciens #}
+    <div class="col-lg-5">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">Charge des techniciens</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Technicien</th>
+                            <th class="text-center">Actifs</th>
+                            <th class="text-center">Résolus</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tech in technicien_load %}
+                        <tr>
+                            <td>{{ tech.get_full_name|default:tech.username }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-{% if tech.active_tickets > 5 %}danger{% elif tech.active_tickets > 2 %}warning{% else %}success{% endif %}">
+                                    {{ tech.active_tickets }}
+                                </span>
+                            </td>
+                            <td class="text-center text-muted">{{ tech.resolved_total }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-muted text-center py-2">
+                                Aucun technicien.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# Par catégorie #}
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold">Tickets par catégorie</div>
+            <div class="card-body">
+                {% for item in tickets_by_category %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small">{{ item.category__name|default:"Sans catégorie" }}</span>
+                    <span class="badge bg-secondary">{{ item.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {# Tickets récents + répartition #}
+    <div class="col-lg-7">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">Tickets récents</span>
+                <a href="{% url 'tickets:list' %}" class="btn btn-sm btn-outline-secondary">
+                    Voir tout
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Titre</th>
+                            <th>Priorité</th>
+                            <th>Statut</th>
+                            <th>Technicien</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ticket in recent_tickets %}
+                        {% url "tickets:detail" ticket.pk as ticket_url %}
+                        <tr onclick="location.href='{{ ticket_url }}'"
+                            style="cursor:pointer">
+                            <td>{{ ticket.pk }}</td>
+                            <td>{{ ticket.title|truncatechars:30 }}</td>
+                            <td>
+                                <span class="badge bg-{{ ticket.priority_color }}">
+                                    {{ ticket.get_priority_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ ticket.status_color }}">
+                                    {{ ticket.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ ticket.assigned_to|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# Répartition statut + priorité #}
+        <div class="row g-3">
+            <div class="col-6">
+                <div class="card shadow-sm">
+                    <div class="card-header fw-semibold small">Par statut</div>
+                    <div class="card-body p-2">
+                        {% for item in tickets_by_status %}
+                        <div class="d-flex justify-content-between small py-1 border-bottom">
+                            <span>{{ item.status }}</span>
+                            <strong>{{ item.count }}</strong>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card shadow-sm">
+                    <div class="card-header fw-semibold small">Par priorité</div>
+                    <div class="card-body p-2">
+                        {% for item in tickets_by_priority %}
+                        <div class="d-flex justify-content-between small py-1 border-bottom">
+                            <span>{{ item.priority }}</span>
+                            <strong>{{ item.count }}</strong>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

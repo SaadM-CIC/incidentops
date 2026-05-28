@@ -1,0 +1,26 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<h3 class="mb-4">Mes notifications</h3>
+
+<div class="list-group">
+  {% for notif in notifications %}
+  <div class="list-group-item {% if not notif.is_read %}list-group-item-light fw-semibold{% endif %}">
+    <div class="d-flex justify-content-between">
+      <span>{{ notif.message }}</span>
+      <small class="text-muted">{{ notif.created_at|date:"d/m/Y H:i" }}</small>
+    </div>
+    <div class="mt-1">
+      <a href="{% url 'tickets:detail' notif.ticket.pk %}"
+         class="btn btn-sm btn-outline-primary">
+        Voir le ticket #{{ notif.ticket.pk }}
+      </a>
+    </div>
+  </div>
+  {% empty %}
+  <p class="text-muted">Aucune notification.</p>
+  {% endfor %}
+</div>
+{% endblock %}

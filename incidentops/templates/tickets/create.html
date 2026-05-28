@@ -1,0 +1,123 @@
+{% extends 'base/base.html' %}
+{% block title %}Nouveau ticket{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h3 class="mb-4">Déclarer un incident</h3>
+
+       
+        <div id="ai-suggestion" class="alert alert-info d-none mb-4">
+          <strong>🤖 Suggestions IA</strong>
+          <div class="mt-2 d-flex gap-3 flex-wrap">
+            <span>
+              Catégorie :
+              <strong id="ai-category-name">—</strong>
+            </span>
+            <span>
+              Priorité :
+              <strong id="ai-priority-label">—</strong>
+            </span>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-primary mt-2"
+                  id="apply-ai-btn">
+            Appliquer les suggestions
+          </button>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" id="ticket-form">
+          {% csrf_token %}
+          {% for field in form %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}
+              <div class="form-text">{{ field.help_text }}</div>
+            {% endif %}
+            {% if field.errors %}
+              <div class="text-danger small">{{ field.errors }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+          <button type="submit" class="btn btn-primary">Soumettre le ticket</button>
+          <a href="{% url 'tickets:list' %}" class="btn btn-outline-secondary ms-2">
+            Annuler
+          </a>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Données de suggestion retournées par l'IA
+  let aiSuggestion = { category_id: null, priority: null };
+
+  // Éléments du DOM
+  const titleInput = document.getElementById('id_title');
+  const descInput = document.getElementById('id_description');
+  const categorySelect = document.getElementById('id_category');
+  const prioritySelect = document.getElementById('id_priority');
+  const suggestionBox = document.getElementById('ai-suggestion');
+  const aiCategoryName = document.getElementById('ai-category-name');
+  const aiPriorityLabel = document.getElementById('ai-priority-label');
+  const applyBtn = document.getElementById('apply-ai-btn');
+
+  let debounceTimer = null;
+
+  function fetchSuggestion() {
+    const title = titleInput ? titleInput.value.trim() : '';
+    const description = descInput ? descInput.value.trim() : '';
+
+    // Déclenche seulement si on a au moins 10 caractères
+    if (title.length + description.length < 10) {
+      suggestionBox.classList.add('d-none');
+      return;
+    }
+
+    fetch("{% url 'ai_classifier:suggest' %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}',
+      },
+      body: JSON.stringify({ title, description }),
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.category_id || data.priority) {
+        aiSuggestion = data;
+        aiCategoryName.textContent = data.category_name || '—';
+        aiPriorityLabel.textContent = data.priority_label || '—';
+        suggestionBox.classList.remove('d-none');
+      }
+    })
+    .catch(() => {});
+  }
+
+  // Debounce — attend 600ms après la dernière frappe
+  function onInput() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(fetchSuggestion, 600);
+  }
+
+  if (titleInput) titleInput.addEventListener('input', onInput);
+  if (descInput) descInput.addEventListener('input', onInput);
+
+  // Applique les suggestions dans les selects du formulaire
+  if (applyBtn) {
+    applyBtn.addEventListener('click', () => {
+      if (aiSuggestion.category_id && categorySelect) {
+        categorySelect.value = aiSuggestion.category_id;
+      }
+      if (aiSuggestion.priority && prioritySelect) {
+        prioritySelect.value = aiSuggestion.priority;
+      }
+      suggestionBox.classList.add('d-none');
+    });
+  }
+</script>
+{% endblock %}

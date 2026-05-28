@@ -1,0 +1,122 @@
+{% extends 'base/base.html' %}
+{% block title %}Mon tableau de bord{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Bonjour, {{ request.user.get_full_name|default:request.user.username }} 👋</h2>
+    <a href="{% url 'tickets:create' %}" class="btn btn-primary">+ Nouveau ticket</a>
+</div>
+
+{# Compteurs #}
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card text-center border-0 shadow-sm">
+            <div class="card-body">
+                <div class="fs-1 fw-bold text-primary">{{ total_tickets }}</div>
+                <div class="text-muted">Total tickets</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card text-center border-0 shadow-sm">
+            <div class="card-body">
+                <div class="fs-1 fw-bold text-warning">{{ open_tickets }}</div>
+                <div class="text-muted">En cours</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card text-center border-0 shadow-sm">
+            <div class="card-body">
+                <div class="fs-1 fw-bold text-success">{{ resolved_tickets }}</div>
+                <div class="text-muted">Résolus</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card text-center border-0 shadow-sm">
+            <div class="card-body">
+                <div class="fs-1 fw-bold text-secondary">{{ closed_tickets }}</div>
+                <div class="text-muted">Fermés</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    {# Tickets récents #}
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">Mes tickets récents</span>
+                <a href="{% url 'tickets:list' %}" class="btn btn-sm btn-outline-secondary">
+                    Voir tout
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Titre</th>
+                            <th>Priorité</th>
+                            <th>Statut</th>
+                            <th>Créé le</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ticket in recent_tickets %}
+                        {% url "tickets:detail" ticket.pk as ticket_url %}
+                        <tr class="cursor-pointer"
+                            onclick="location.href='{{ ticket_url }}';">
+                            <td>{{ ticket.pk }}</td>
+                            <td>{{ ticket.title|truncatechars:40 }}</td>
+                            <td>
+                                <span class="badge bg-{{ ticket.priority_color }}">
+                                    {{ ticket.get_priority_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ ticket.status_color }}">
+                                    {{ ticket.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ ticket.created_at|date:"d/m/Y" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-3">
+                                Aucun ticket pour l'instant.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {# Notifications récentes #}
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">Notifications</span>
+                <a href="{% url 'notifications:list' %}" class="btn btn-sm btn-outline-secondary">
+                    Tout voir
+                </a>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for notif in unread_notifications %}
+                <a href="{% url 'tickets:detail' notif.ticket.pk %}"
+                   class="list-group-item list-group-item-action">
+                    <div class="small text-muted">{{ notif.created_at|date:"d/m H:i" }}</div>
+                    {{ notif.message }}
+                </a>
+                {% empty %}
+                <div class="list-group-item text-muted">Aucune nouvelle notification.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

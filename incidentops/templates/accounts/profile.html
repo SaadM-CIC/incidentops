@@ -1,0 +1,38 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Mon profil{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-4">
+                    {% if profile_user.avatar %}
+                        <img src="{{ profile_user.avatar.url }}" class="rounded-circle me-3"
+                             width="80" height="80" style="object-fit:cover;">
+                    {% endif %}
+                    <div>
+                        <h3 class="mb-0">{{ profile_user.get_full_name|default:profile_user.username }}</h3>
+                        <span class="badge bg-primary">{{ profile_user.get_role_display }}</span>
+                        {% if profile_user.department %}
+                            <span class="text-muted ms-2">{{ profile_user.department }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <table class="table table-borderless">
+                    <tr><th>Email</th><td>{{ profile_user.email }}</td></tr>
+                    <tr><th>Téléphone</th><td>{{ profile_user.phone|default:"—" }}</td></tr>
+                    <tr><th>Membre depuis</th><td>{{ profile_user.date_joined|date:"d/m/Y" }}</td></tr>
+                    {% if profile_user.bio %}
+                        <tr><th>Bio</th><td>{{ profile_user.bio }}</td></tr>
+                    {% endif %}
+                </table>
+                <a href="{% url 'accounts:profile_edit' %}" class="btn btn-outline-primary">
+                    Modifier le profil
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

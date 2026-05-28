@@ -1,0 +1,44 @@
+services:
+  db:
+    image: mysql:8.0
+    pull_policy: if_not_present
+    restart: always
+    environment:
+      MYSQL_DATABASE: incidentops_db
+      MYSQL_USER: incidentops_user
+      MYSQL_PASSWORD: incidentops_pass
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "incidentops_user", "-pincidentops_pass"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  web:
+    image: incidentops-web:latest
+    pull_policy: never
+    build:
+      context: .
+      pull: false
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:

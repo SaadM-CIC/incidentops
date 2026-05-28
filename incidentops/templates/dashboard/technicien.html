@@ -1,0 +1,164 @@
+{% extends 'base/base.html' %}
+{% block title %}Dashboard Technicien{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Tableau de bord technicien</h2>
+
+{# Compteurs #}
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card text-center border-0 shadow-sm">
+            <div class="card-body">
+                <div class="fs-1 fw-bold text-primary">{{ assigned_count }}</div>
+                <div class="text-muted">Tickets affectés</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card text-center border-0 shadow-sm">
+            <div class="card-body">
+                <div class="fs-1 fw-bold text-warning">{{ in_progress_count }}</div>
+                <div class="text-muted">En cours</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card text-center border-0 shadow-sm">
+            <div class="card-body">
+                <div class="fs-1 fw-bold text-success">{{ resolved_today }}</div>
+                <div class="text-muted">Résolus aujourd'hui</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card text-center border-0 shadow-sm">
+            <div class="card-body">
+                <div class="fs-1 fw-bold text-danger">{{ critical_count }}</div>
+                <div class="text-muted">Critiques actifs</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if avg_resolution_hours %}
+<div class="alert alert-info mb-4">
+    ⏱ Temps moyen de résolution : <strong>{{ avg_resolution_hours }}h</strong>
+</div>
+{% endif %}
+
+<div class="row g-4">
+    {# Mes tickets actifs #}
+    <div class="col-lg-7">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">
+                Mes tickets actifs
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Titre</th>
+                            <th>Priorité</th>
+                            <th>Statut</th>
+                            <th>Demandeur</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ticket in my_tickets %}
+                        {% url "tickets:detail" ticket.pk as ticket_url %}
+                        <tr onclick="location.href='{{ ticket_url }}'"
+                            style="cursor:pointer">
+                            <td>{{ ticket.pk }}</td>
+                            <td>{{ ticket.title|truncatechars:35 }}</td>
+                            <td>
+                                <span class="badge bg-{{ ticket.priority_color }}">
+                                    {{ ticket.get_priority_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ ticket.status_color }}">
+                                    {{ ticket.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ ticket.created_by }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-3">
+                                Aucun ticket actif.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# Tickets non affectés #}
+        {% if unassigned_tickets %}
+        <div class="card shadow-sm border-warning">
+            <div class="card-header fw-semibold text-warning">
+                ⚠ Tickets en attente d'affectation
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Titre</th>
+                            <th>Priorité</th>
+                            <th>Catégorie</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ticket in unassigned_tickets %}
+                        {% url "tickets:detail" ticket.pk as ticket_url %}
+                        <tr onclick="location.href='{{ ticket_url }}'"
+                            style="cursor:pointer">
+                            <td>{{ ticket.pk }}</td>
+                            <td>{{ ticket.title|truncatechars:35 }}</td>
+                            <td>
+                                <span class="badge bg-{{ ticket.priority_color }}">
+                                    {{ ticket.get_priority_display }}
+                                </span>
+                            </td>
+                            <td>{{ ticket.category|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {# Répartition par statut #}
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold">Répartition par statut</div>
+            <div class="card-body">
+                {% for item in tickets_by_status %}
+                {% widthratio item.count assigned_count 100 as status_percent %}
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span>{{ item.status }}</span>
+                        <strong>{{ item.count }}</strong>
+                    </div>
+                    <div class="progress" style="height:8px">
+                        <div class="progress-bar"
+                             data-progress="{{ status_percent }}">
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.querySelectorAll('[data-progress]').forEach((bar) => {
+        bar.style.width = `${bar.dataset.progress}%`;
+    });
+</script>
+{% endblock %}
