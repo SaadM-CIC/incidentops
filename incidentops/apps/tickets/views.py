@@ -62,7 +62,7 @@ def send_ticket_created_email(ticket, user):
                 <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
                 
                 <p style="color: #666; font-size: 12px;">
-                    <strong>Équipe IncidentOps</strong><br>
+                    <strong>Équipe Smart Claim</strong><br>
                     Support technique<br>
                     Merci de votre confiance !
                 </p>
@@ -88,7 +88,7 @@ Votre demande a été enregistrée et sera prise en considération par notre éq
 Vous pouvez suivre l'évolution de votre ticket à tout moment en consultant votre compte sur notre plateforme.
 
 ---
-Équipe IncidentOps
+Équipe Smart Claim
 Support technique
 Merci de votre confiance !
     """
