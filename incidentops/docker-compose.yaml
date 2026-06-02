@@ -19,7 +19,7 @@ services:
       retries: 20
 
   web:
-    image: incidentops-web:latest
+    image: saadmouafiq/incidentops:v2
     pull_policy: never
     build:
       context: .
@@ -30,7 +30,7 @@ services:
     volumes:
       - .:/app
     ports:
-      - "8000:8000"
+      - "8090:8000"
     env_file:
       - .env
     environment:
